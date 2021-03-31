@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import MapContainer from './MapContainer.js';
 
 
 class MainLayout extends React.Component {
@@ -14,7 +15,10 @@ class MainLayout extends React.Component {
 
   render() {
     return(
-      <h1> Test </h1>
+      <div>
+        <h1> Restaurants </h1>
+        <MapContainer />
+      </div>
     );
   }
 }
