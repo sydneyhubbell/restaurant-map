@@ -2,15 +2,16 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 
-MainLayout.propTypes = {
-
-};
-
-MainLayout.defaultProps = {
-
-};
-
 class MainLayout extends React.Component {
+  static propTypes = {
+
+  };
+
+  static defaultProps = {
+
+  };
+
+
   render() {
     return(
       <h1> Test </h1>
