@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { loadModules } from 'esri-loader';
-import { arcgisApiKey } from '../apiKeys.js';
+import { arcgisApiKey } from '../data/apiKeys.js';
 import './Map.css';
 
 
@@ -11,11 +11,19 @@ export default class Map extends React.Component {
     center: PropTypes.shape({
       latitude: PropTypes.number,
       longitude: PropTypes.number
-    })
+    }),
+    restaurants: PropTypes.arrayOf(PropTypes.shape({
+      name: PropTypes.string,
+      latitude: PropTypes.number,
+      longitude: PropTypes.number,
+      stars: PropTypes.number,
+      review: PropTypes.string
+    }))
   };
   static defaultProps = {
     zoom: 12,
-    center: { latitude: 42.35879, longitude: -71.05610 } // Boston
+    center: { latitude: 42.35879, longitude: -71.05610 }, // Boston
+    restaurantList: []
   };
 
   constructor(props) {
@@ -61,6 +69,7 @@ export default class Map extends React.Component {
   }
 
   render() {
+    console.log(this.props.restaurants);
     return(
       <div className='restaurant-map-div' id='restaurantMap' />
     );

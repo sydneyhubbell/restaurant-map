@@ -1,17 +1,27 @@
+import { getRestaurants } from '../../services/index.js';
+
 // Action Types
-export const TEST = 'TEST';
+export const FETCHING_RESTAURANTS = 'FETCHING_RESTAURANTS';
+export const FETCHING_RESTAURANTS_SUCCESS = 'FETCHING_RESTAURANTS_SUCCESS';
+export const FETCHING_RESTAURANTS_FAILURE = 'FETCHING_RESTAURANTS_FAILURE';
 
 
 // Action creators
 
 /**
- * A test action
- * @param {string} param the sample parameter
- * @returns {object} action to perform test activity
+ * An action to fetch the restaurants
+ * @returns {Promise} The promise to fetch restaurant data
  */
-export function test(param) {
-  return {
-    type: TEST,
-    payload: param
+export function fetchRestaurants() {
+  return (dispatch) => {
+    dispatch({ type: FETCHING_RESTAURANTS });
+
+    return getRestaurants()
+      .then((restaurants) => {
+        dispatch({ type: FETCHING_RESTAURANTS_SUCCESS, payload: restaurants });
+      })
+      .catch((error) => {
+        dispatch({ type: FETCHING_RESTAURANTS_FAILURE, payload: error });
+      });
   };
 }
