@@ -44,16 +44,20 @@ export default class Map extends React.Component {
         });
         view.when(() => {
           this.setupMap(map, view);
-        })
-
-      })
+        });
+      });
   }
 
   setupMap = (map, view) => {
     this.setState({ map, view });
-    console.log('map loaded');
 
-    // setup widgets here
+    loadModules(['esri/widgets/Editor'], {})
+      .then(([Editor]) => {
+        // Create the Editor
+        const editor = new Editor({ view });
+        // Add widget to top-right of the view
+        view.ui.add(editor, "top-right");
+      });
   }
 
   render() {
