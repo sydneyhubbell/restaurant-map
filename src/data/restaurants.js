@@ -1,8 +1,8 @@
 export const restaurants = [
   {
     name: "Posto",
-    latitude: 42.39888289804642,
-    longitude: -71.11275686423284,
+    latitude: 42.393130393416975,
+    longitude: -71.12023817216877,
     stars: 4.5,
     review: "Great Pizza and cocktails"
   },

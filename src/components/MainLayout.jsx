@@ -2,7 +2,9 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import MapContainer from './MapContainer.js';
 
-
+/**
+ * Main Layout Component that holds the contents of the site
+ */
 class MainLayout extends React.Component {
   static propTypes = {
     restaurants: PropTypes.arrayOf(PropTypes.object),
@@ -13,6 +15,10 @@ class MainLayout extends React.Component {
     restaurants: []
   };
 
+  /**
+   * Upon mounting, if there are no restaurants loaded, fetch them
+   * @returns {void}
+   */
   componentDidMount() {
     const { fetchRestaurants, restaurants} = this.props;
     if (restaurants.length === 0) {
@@ -20,7 +26,10 @@ class MainLayout extends React.Component {
     }
   }
 
-
+  /**
+   * Render the main layout of the site
+   * @returns {HTML}
+   */
   render() {
     const { restaurants } = this.props;
     return(
