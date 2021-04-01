@@ -38,8 +38,10 @@ export default class Map extends React.Component {
     this.state = {
       map: null,
       view: null,
-      restaurantLayer: null,
-      zoom: props.zoom
+      webMercatorUtils: null,
+      FeatureLayer: null,
+      AttachmentsContent: null,
+      CustomContent: null
     }
   }
 
@@ -74,30 +76,62 @@ export default class Map extends React.Component {
    * @returns {void}
    */
   setupMap = (map, view) => {
-    this.setState({ map, view });
-    loadModules(['esri/widgets/Editor', 'esri/geometry/support/webMercatorUtils', 'esri/layers/FeatureLayer'], {})
-      .then(([Editor, webMercatorUtils, FeatureLayer]) => {
-
-        const restaurantGraphics = this.createGraphics(webMercatorUtils);
-
-        const restaurantLayer = this.createLayer(restaurantGraphics, FeatureLayer);
-
-        this.state.map.add(restaurantLayer);
-
-        // Create the Editor
-        const editor = new Editor({ view });
-        // Add widget to top-right of the view
-        this.state.view.ui.add(editor, "top-right");
+    // Load the Esri Modules once, and store them in the state for future use
+    loadModules(['esri/widgets/Editor', 'esri/geometry/support/webMercatorUtils',
+    'esri/layers/FeatureLayer', 'esri/popup/content/AttachmentsContent',
+    'esri/popup/content/CustomContent'], {})
+      .then(([Editor, webMercatorUtils, FeatureLayer, AttachmentsContent, CustomContent]) => {
+        this.setState({
+          map,
+          view,
+          webMercatorUtils,
+          FeatureLayer,
+          AttachmentsContent,
+          CustomContent
+        }, () => {
+          // create the Graphics
+          const restaurantGraphics = this.createGraphics();
+          // Add those graphics to a new Feature layer
+          this._restaurantLayer = this.createLayer(restaurantGraphics);
+          // add the layer to the map
+          this.state.map.add(this._restaurantLayer);
+          // configure the editor
+          this._editor = new Editor({
+            view,
+            container: document.createElement("div"),
+            layerInfos: [{
+              layer: this._restaurantLayer,
+              fieldConfig: [{
+                name: "name",
+                label: "Name",
+                editable: true
+              }, {
+                name: "category",
+                label: "Category",
+                editable: true
+              }, {
+                name: "rating",
+                label: "Rating",
+                editable: true
+              }, {
+                name: "review",
+                label: "Review",
+                editable: true
+              }]
+            }]
+          });
+          this.configureEditor();
       });
+    });
   }
 
   /**
   * Create a list of Esri Graphics, one per restaurant
-  * @param {any} webMercatorUtils an ESRI object for formatting geometries
   * @returns {array} the list of restaurant Graphics
   */
-  createGraphics = (webMercatorUtils) => {
+  createGraphics = () => {
     const { restaurants } = this.props;
+    const { webMercatorUtils } = this.state;
 
     return restaurants.map((restaurant) => {
       const point = {
@@ -105,13 +139,15 @@ export default class Map extends React.Component {
         latitude: restaurant.latitude,
         longitude: restaurant.longitude
       };
+
       const geometry = webMercatorUtils.geographicToWebMercator(point);
       return {
         geometry,
         attributes: {
           name: restaurant.name,
           rating: restaurant.stars,
-          review: restaurant.review
+          category: restaurant.category,
+          review: restaurant.review,
         }
       };
     });
@@ -120,33 +156,48 @@ export default class Map extends React.Component {
   /**
   * Create a Feature Layer containing the restaurant Graphics
   * @param {array} restaurantGraphics the list of restaurant Graphics
-  * @param {any} FeatureLayer the Feature Layer Esri object
   * @returns {any} the feature layer
   */
-  createLayer = (restaurantGraphics, FeatureLayer) => {
+  createLayer = (restaurantGraphics) => {
+    const { FeatureLayer } = this.state;
+    // specify the fields that each graphic will contain
+    const fields = [
+      { name: "ObjectID", alias: "ObjectID", type: "oid"},
+      { name: "name", alias: "Name", type: "string" },
+      { name: "rating", alias: "Rating",type: "double" },
+      { name: "category", alias: "Category", type: "string" },
+      { name: "review", alias: "Review", type: "string"}
+    ];
+
+    const editThisAction = {
+      title: "Edit",
+      id: "edit-this",
+      className: "esri-icon-edit"
+    };
+
+    /* Create a popupTemplate for the featurelayer and pass in a function to
+    set its content and specify an action to handle editing the selected feature */
+    this._template = {
+      title: "{name}",
+      outFields: ["*"],
+      content: this.generateTemplateContent,
+      fieldInfos: [
+        { fieldName: "name" },
+        { fieldName: "rating" },
+        { fieldName: "category" },
+        { fieldName: "review" }
+      ],
+      actions: [editThisAction]
+    };
+
     return new FeatureLayer({
       source: restaurantGraphics,
-      fields: [{
-        name: "ObjectID",
-        alias: "ObjectID",
-        type: "oid"
-      }, {
-        name: "name",
-        alias: "Name",
-        type: "string"
-      },
-      {
-        name: "rating",
-        alias: "Rating",
-        type: "double"
-      },
-      {
-        name: "review",
-        alias: "Review",
-        type: "string"
-      }],
+      fields,
+      popupTemplate: this._template,
+      outFields: ["*"],
       objectIdField: "ObjectID",
       geometryType: "point",
+      editingEnabled: true,
       renderer: {
         type: "simple",
         symbol: {
@@ -155,29 +206,116 @@ export default class Map extends React.Component {
           width: '25px',
           height:'25px'
         }
-      },
-      popupTemplate: {
-        title: 'Restaurant',
-        content: [{
-          type: 'fields',
-          fieldInfos: [{
-            fieldName: 'name',
-            label: 'Name',
-            visible: true
-          }, {
-            fieldName: 'rating',
-            label: 'Rating',
-            visible: true
-          }, {
-            fieldName: 'review',
-            label: 'Review',
-            visible: true
-          }]
-        }]
       }
+    });
+  };
+
+  /** Creates two popup elements for the template: attachments and custom text
+   * @param {any} feature the feature to create a popup for
+   * @returns {array} the popup elements
+   */
+  generateTemplateContent = (feature) => {
+    const { AttachmentsContent, CustomContent } = this.state;
+    // 1. Set how the attachments should display within the popup
+    const attachmentsElement = new AttachmentsContent({
+      displayType: "list"
+    });
+
+    // This custom content element contains formatted popup content
+    const customElement = new CustomContent({
+      outFields: ["*"],
+      creator: function (event) {
+        return (
+          `${event.graphic.attributes.rating}/5 stars
+          <ul>
+              <li>${event.graphic.attributes.category}</li>
+              <li>${event.graphic.attributes.review}</li>
+            </ul>
+        `);
+      }
+    });
+
+    return [customElement, attachmentsElement];
+  };
+
+  /**
+   * Setup listeners and action handling for the Editor widget
+   * @returns {void}
+   */
+  configureEditor = () => {
+    const { view } = this.state;
+    const _this = this;
+
+    // Event handler that fires each time an action is clicked
+    view.popup.on("trigger-action", function (event) {
+      if (event.action.id === "edit-this") {
+        _this.editThis();
+      }
+    });
+
+    // Watch when the popup is visible
+    view.popup.watch("visible", (event) => {
+      // Check the Editor's viewModel state, if it is currently open and editing existing features, disable popups
+      if (_this._editor.viewModel.state === "editing-existing-feature") {
+        view.popup.close();
+      } else {
+        // Grab the features of the popup
+        _this._features = view.popup.features;
+      }
+    });
+
+    // Apply edits to the restaurant layer
+    _this._restaurantLayer.on("apply-edits", () => {
+      // Once edits are applied to the layer, remove the Editor from the UI
+      view.ui.remove(_this._editor);
+
+      // Iterate through the features
+      _this._features.forEach((feature) => {
+        // Reset the template for the feature if it was edited
+        feature.popupTemplate = _this._template;
+      });
+      // Cancel the workflow so that once edits are applied, a new popup can be displayed
+      _this._editor.viewModel.cancelWorkflow();
     });
   }
 
+  /** Execute each time the "Edit feature" action is clicked
+   * @returns {void}
+   */
+  editThis = () => {
+    const { view } = this.state;
+    const _this = this;
+    // If the EditorViewModel's activeWorkflow is null, make the popup not visible
+    if (!_this._editor.viewModel.activeWorkFlow) {
+      view.popup.visible = false;
+      // Call the Editor update feature edit workflow
+      _this._editor.startUpdateWorkflowAtFeatureEdit(view.popup.selectedFeature);
+      view.ui.add(_this._editor, "top-right");
+      view.popup.spinnerEnabled = false;
+    }
+
+    // We need to set a timeout to ensure the editor widget is fully rendered. We
+    // then grab it from the DOM stack
+    setTimeout(function () {
+      // Use the editor's back button as a way to cancel out of editing
+      let arrComp = _this._editor.domNode.getElementsByClassName(
+        "esri-editor__back-button esri-interactive");
+      if (arrComp.length === 1) {
+        // Add a tooltip for the back button
+        arrComp[0].setAttribute("title", "Cancel edits, return to popup");
+        // Add a listerner to listen for when the editor's back button is clicked
+        arrComp[0].addEventListener('click', function (evt) {
+          // Prevent the default behavior for the back button and instead remove the editor and reopen the popup
+          evt.preventDefault();
+          _this._editor.viewModel.cancelWorkflow();
+          view.ui.remove(_this._editor);
+          view.popup.open({
+            features: _this._features
+          });
+        });
+      }
+    }, 150);
+  }
 
   /**
    * Render the Map Component

@@ -34,7 +34,7 @@ class MainLayout extends React.Component {
     const { restaurants } = this.props;
     return(
       <div>
-        <h1> Restaurants </h1>
+        <h1> Restaurant Reviews </h1>
         <MapContainer
           restaurants={restaurants}
         />
