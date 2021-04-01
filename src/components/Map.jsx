@@ -105,7 +105,12 @@ export default class Map extends React.Component {
             container: document.createElement("div"),
             layerInfos: [{
               layer: this._restaurantLayer,
-              fieldConfig: [{
+              fieldConfig: [
+              {
+                name: "id",
+                label: "id",
+                editable: false
+              },{
                 name: "name",
                 label: "Name",
                 editable: true

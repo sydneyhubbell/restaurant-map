@@ -22,9 +22,9 @@ class ReviewForm extends React.Component {
     const { addRestaurantCallback } = this.props;
     return(
       <div>
-        <h1> Form </h1>
+        <p> Coming Soon </p>
         <button
-          className="rm-solid-button"
+          className="rm-solid-button large-margin"
           onClick={addRestaurantCallback}
         >
           Submit

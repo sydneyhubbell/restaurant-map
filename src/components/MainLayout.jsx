@@ -47,15 +47,17 @@ class MainLayout extends React.Component {
     const { restaurants } = this.props;
     const { showForm } = this.state;
     return(
-      <div>
-        <h1> Restaurant Reviews </h1>
+      <div className="container">
+        <h1 id="title"> Restaurant Reviews </h1>
         {!showForm && (
-          <button
-            className="rm-gradient-button"
-            onClick={() => { this.setState({ showForm: true }); }}
-          >
-            Review a New Restaurant
+          <div>
+            <button
+              className="rm-gradient-button large-margin"
+              onClick={() => { this.setState({ showForm: true }); }}
+            >
+              Review a New Restaurant
           </button>
+          </div>
         )}
         {showForm && (
           <ReviewFormContainer
