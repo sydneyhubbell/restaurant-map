@@ -152,8 +152,8 @@ export default class Map extends React.Component {
         symbol: {
           type: 'picture-marker',
           url: `${process.env.PUBLIC_URL}/assets/restaurant-icon.svg`,
-          width: '15px',
-          height:'15px'
+          width: '25px',
+          height:'25px'
         }
       },
       popupTemplate: {
