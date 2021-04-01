@@ -66,7 +66,7 @@ export const restaurants = [
   {
     name: "Thinking Cup",
     latitude: 42.354339815839346,
-    longitude: , -71.06323525356133,
+    longitude: -71.06323525356133,
     stars: 4.2,
     category: "Coffee Shop",
     review: "Good coffee and great sandwiches. Always busy inside, so get it to go and eat in The Common"
