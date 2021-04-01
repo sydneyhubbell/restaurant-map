@@ -1,6 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import MapContainer from './MapContainer.js';
+import ReviewFormContainer from './ReviewFormContainer.js';
+import './Main.css';
 
 /**
  * Main Layout Component that holds the contents of the site
@@ -26,15 +28,40 @@ class MainLayout extends React.Component {
     }
   }
 
+ /**
+  * Construct this component
+  */
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      showForm: false
+    };
+  }
+
   /**
    * Render the main layout of the site
    * @returns {HTML}
    */
   render() {
     const { restaurants } = this.props;
+    const { showForm } = this.state;
     return(
       <div>
         <h1> Restaurant Reviews </h1>
+        {!showForm && (
+          <button
+            className="rm-gradient-button"
+            onClick={() => { this.setState({ showForm: true }); }}
+          >
+            Review a New Restaurant
+          </button>
+        )}
+        {showForm && (
+          <ReviewFormContainer
+            addRestaurantCallback={() => { this.setState({ showForm: false }); }}
+          />
+        )}
         <MapContainer
           restaurants={restaurants}
         />

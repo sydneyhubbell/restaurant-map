@@ -15,12 +15,16 @@ export default class Map extends React.Component {
       longitude: PropTypes.number
     }),
     restaurants: PropTypes.arrayOf(PropTypes.shape({
+      id: PropTypes.number,
       name: PropTypes.string,
       latitude: PropTypes.number,
       longitude: PropTypes.number,
-      stars: PropTypes.number,
+      category: PropTypes.string,
+      rating: PropTypes.number,
       review: PropTypes.string
-    }))
+    })),
+    updateRestaurant: PropTypes.func.isRequired,
+    deleteRestaurant: PropTypes.func.isRequired
   };
   static defaultProps = {
     zoom: 12,
@@ -144,8 +148,9 @@ export default class Map extends React.Component {
       return {
         geometry,
         attributes: {
+          id: restaurant.id,
           name: restaurant.name,
-          rating: restaurant.stars,
+          rating: restaurant.rating,
           category: restaurant.category,
           review: restaurant.review,
         }
@@ -162,7 +167,7 @@ export default class Map extends React.Component {
     const { FeatureLayer } = this.state;
     // specify the fields that each graphic will contain
     const fields = [
-      { name: "ObjectID", alias: "ObjectID", type: "oid"},
+      { name: "id", alias: "ID", type: "oid"},
       { name: "name", alias: "Name", type: "string" },
       { name: "rating", alias: "Rating",type: "double" },
       { name: "category", alias: "Category", type: "string" },
@@ -182,6 +187,7 @@ export default class Map extends React.Component {
       outFields: ["*"],
       content: this.generateTemplateContent,
       fieldInfos: [
+        {fieldName: "id" },
         { fieldName: "name" },
         { fieldName: "rating" },
         { fieldName: "category" },
@@ -247,7 +253,7 @@ export default class Map extends React.Component {
     const _this = this;
 
     // Event handler that fires each time an action is clicked
-    view.popup.on("trigger-action", function (event) {
+    view.popup.on("trigger-action", (event) => {
       if (event.action.id === "edit-this") {
         _this.editThis();
       }
@@ -263,6 +269,8 @@ export default class Map extends React.Component {
         _this._features = view.popup.features;
       }
     });
+
+    // TODO add delete handling to remove from store
 
     // Apply edits to the restaurant layer
     _this._restaurantLayer.on("apply-edits", () => {
@@ -283,6 +291,7 @@ export default class Map extends React.Component {
    * @returns {void}
    */
   editThis = () => {
+    const { updateRestaurant, deleteRestaurant } = this.props;
     const { view } = this.state;
     const _this = this;
     // If the EditorViewModel's activeWorkflow is null, make the popup not visible
@@ -296,15 +305,15 @@ export default class Map extends React.Component {
 
     // We need to set a timeout to ensure the editor widget is fully rendered. We
     // then grab it from the DOM stack
-    setTimeout(function () {
+    setTimeout(() => {
       // Use the editor's back button as a way to cancel out of editing
-      let arrComp = _this._editor.domNode.getElementsByClassName(
+      let backButton = _this._editor.domNode.getElementsByClassName(
         "esri-editor__back-button esri-interactive");
-      if (arrComp.length === 1) {
+      if (backButton.length === 1) {
         // Add a tooltip for the back button
-        arrComp[0].setAttribute("title", "Cancel edits, return to popup");
+        backButton[0].setAttribute("title", "Cancel edits, return to popup");
         // Add a listerner to listen for when the editor's back button is clicked
-        arrComp[0].addEventListener('click', function (evt) {
+        backButton[0].addEventListener('click', (evt) => {
           // Prevent the default behavior for the back button and instead remove the editor and reopen the popup
           evt.preventDefault();
           _this._editor.viewModel.cancelWorkflow();
@@ -312,6 +321,33 @@ export default class Map extends React.Component {
           view.popup.open({
             features: _this._features
           });
+        });
+      }
+
+      // Use the Editor's Update button as a way to trigger store updates
+      let updateButton = _this._editor.domNode.getElementsByClassName(
+        "esri-editor__control-button esri-button");
+      if (updateButton.length > 1) {
+        updateButton[0].addEventListener('click', (event) => {
+          const restaurantDetails = _this._features[0].attributes;
+          updateRestaurant({ ...restaurantDetails });
+        });
+      }
+
+      // Use the Editor's Delete button as a way to trigger store updates
+      let deleteButton = _this._editor.domNode.getElementsByClassName(
+        "esri-editor__control-button esri-button esri-button--tertiary");
+      if (deleteButton.length === 1) {
+        deleteButton[0].addEventListener('click', (event) => {
+          setTimeout(() => {
+            let confirmDeleteButton = _this._editor.domNode.getElementsByClassName(
+              "esri-editor__warning-option esri-editor__warning-option--positive");
+            if (confirmDeleteButton.length === 1) {
+              confirmDeleteButton[0].addEventListener('click', (event) => {
+                deleteRestaurant(_this._features[0].attributes.id);
+              });
+            }
+          }, 150);
         });
       }
     }, 150);

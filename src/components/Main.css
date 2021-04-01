@@ -1,0 +1,47 @@
+* {
+  font-family: 'Roboto', sans-serif;
+}
+
+.rm-gradient-button{
+  display: inline-block;
+  padding: 7px 20px;
+  border-radius: 25px;
+  text-decoration: none;
+  cursor: pointer;
+  line-height: 1.75;
+  vertical-align: middle;
+  font-size: 18px;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: #FFF;
+  border-width: 0px;
+  background-image: -webkit-linear-gradient(#6795fd 0%, #67ceff 100%);
+  background-image: linear-gradient(#6795fd 0%, #67ceff 100%);
+  transition: .4s;
+}
+
+.rm-gradient-button:hover {
+  background-image: -webkit-linear-gradient(#6795fd 0%, #67ceff 70%);
+  background-image: linear-gradient(#6795fd 0%, #67ceff 70%);
+}
+
+.rm-solid-button{
+  display: inline-block;
+  padding: 7px 20px;
+  border-radius: 25px;
+  text-decoration: none;
+  cursor: pointer;
+  line-height: 1.75;
+  vertical-align: middle;
+  text-transform: uppercase;
+  font-size: 18px;
+  font-weight: bold;
+  color: #FFF;
+  border-width: 0px;
+  background-color: #6795fd;
+  transition: .4s;
+}
+
+.rm-solid-button:hover {
+  background-color: #6795fdE6
+}
